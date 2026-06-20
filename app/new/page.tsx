@@ -34,6 +34,9 @@ export default function NewJobPage() {
   const [isFetching, setIsFetching] = useState(false)
   const [fetchMessage, setFetchMessage] = useState<{ text: string; isError: boolean } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [pasteText, setPasteText] = useState('')
+  const [isExtracting, setIsExtracting] = useState(false)
+  const [extractMessage, setExtractMessage] = useState<{ text: string; isError: boolean } | null>(null)
 
   const [form, setForm] = useState({
     title: '',
@@ -100,8 +103,55 @@ export default function NewJobPage() {
     router.push('/')
   }
 
+  async function handleExtract() {
+    if (!pasteText.trim()) return
+    setIsExtracting(true)
+    setExtractMessage(null)
+    try {
+      const res = await fetch('/api/extract-job-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: pasteText }),
+      })
+      const data = await res.json()
+      if (data.error) {
+        setExtractMessage({ text: data.error, isError: true })
+        return
+      }
+
+      const filled: string[] = []
+      setForm((prev) => {
+        const next = { ...prev }
+        if (data.title && !prev.title) { next.title = data.title; filled.push('タイトル') }
+        if (data.rate && !prev.rate) { next.rate = data.rate; filled.push('単価') }
+        if (data.source && data.source !== 'other' && prev.source === 'other') {
+          next.source = data.source
+          filled.push('サイト種別')
+        }
+        if (data.tags.length > 0) {
+          const merged = Array.from(new Set([...prev.tags, ...data.tags]))
+          if (merged.length > prev.tags.length) {
+            next.tags = merged
+            filled.push(`${merged.length - prev.tags.length}件のタグ`)
+          }
+        }
+        return next
+      })
+
+      if (filled.length === 0) {
+        setExtractMessage({ text: '抽出できる情報が見つかりませんでした。手動で入力してください。', isError: true })
+      } else {
+        setExtractMessage({ text: `${filled.join('・')}を抽出しました。内容を確認してください。`, isError: false })
+      }
+    } catch {
+      setExtractMessage({ text: '抽出中にエラーが発生しました。手動で入力してください。', isError: true })
+    } finally {
+      setIsExtracting(false)
+    }
+  }
+
   const urlValid = isValidUrl(url)
-  const busy = isFetching || isSaving
+  const busy = isFetching || isSaving || isExtracting
 
   return (
     <div className="max-w-2xl">
@@ -140,6 +190,35 @@ export default function NewJobPage() {
               {fetchMessage.text}
             </p>
           )}
+        </div>
+
+        {/* テキスト貼り付けセクション */}
+        <div className="rounded-lg border p-4 flex flex-col gap-3" style={{ borderColor: '#E2E8F0', backgroundColor: '#FFFFFF' }}>
+          <Textarea
+            id="pasteText"
+            label="案件テキストを貼り付け（AIで自動入力）"
+            rows={6}
+            placeholder="案件募集文をここに貼り付けてください..."
+            value={pasteText}
+            onChange={(e) => { setPasteText(e.target.value); setExtractMessage(null) }}
+          />
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              isLoading={isExtracting}
+              disabled={!pasteText.trim() || busy}
+              onClick={handleExtract}
+              className="shrink-0"
+            >
+              AIで自動入力
+            </Button>
+            {extractMessage && (
+              <p className="text-xs" style={{ color: extractMessage.isError ? '#DC2626' : '#059669' }}>
+                {extractMessage.text}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* 案件情報 */}
