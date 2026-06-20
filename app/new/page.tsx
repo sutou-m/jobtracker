@@ -111,11 +111,18 @@ export default function NewJobPage() {
       const res = await fetch('/api/extract-job-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: pasteText }),
+        body: JSON.stringify({ text: pasteText, url: url || undefined }),
       })
       const data = await res.json()
       if (data.error) {
         setExtractMessage({ text: data.error, isError: true })
+        return
+      }
+
+      // APIが何も返さなかった場合（真の抽出失敗）
+      const hasData = data.title || data.rate || data.summary || data.tags?.length > 0
+      if (!hasData) {
+        setExtractMessage({ text: '抽出できる情報が見つかりませんでした。手動で入力してください。', isError: true })
         return
       }
 
@@ -124,11 +131,12 @@ export default function NewJobPage() {
         const next = { ...prev }
         if (data.title && !prev.title) { next.title = data.title; filled.push('タイトル') }
         if (data.rate && !prev.rate) { next.rate = data.rate; filled.push('単価') }
+        if (data.summary && !prev.summary) { next.summary = data.summary; filled.push('概要') }
         if (data.source && data.source !== 'other' && prev.source === 'other') {
           next.source = data.source
           filled.push('サイト種別')
         }
-        if (data.tags.length > 0) {
+        if (data.tags?.length > 0) {
           const merged = Array.from(new Set([...prev.tags, ...data.tags]))
           if (merged.length > prev.tags.length) {
             next.tags = merged
@@ -139,7 +147,7 @@ export default function NewJobPage() {
       })
 
       if (filled.length === 0) {
-        setExtractMessage({ text: '抽出できる情報が見つかりませんでした。手動で入力してください。', isError: true })
+        setExtractMessage({ text: '抽出完了しました。すでに入力済みのフィールドは変更されませんでした。', isError: false })
       } else {
         setExtractMessage({ text: `${filled.join('・')}を抽出しました。内容を確認してください。`, isError: false })
       }
