@@ -47,6 +47,7 @@ export function JobEditForm({ job }: Props) {
   const [isFetching, setIsFetching] = useState(false)
   const [fetchMessage, setFetchMessage] = useState<{ text: string; isError: boolean } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const [form, setForm] = useState({
     title: job.title ?? '',
@@ -113,8 +114,24 @@ export function JobEditForm({ job }: Props) {
     router.push('/')
   }
 
+  async function handleDelete() {
+    const confirmed = window.confirm('この案件を削除しますか？この操作は元に戻せません。')
+    if (!confirmed) return
+    setIsDeleting(true)
+    const { error } = await supabase
+      .from('job_postings')
+      .delete()
+      .eq('id', job.id)
+    setIsDeleting(false)
+    if (error) {
+      alert('削除に失敗しました: ' + error.message)
+      return
+    }
+    router.push('/')
+  }
+
   const urlValid = isValidUrl(url)
-  const busy = isFetching || isSaving
+  const busy = isFetching || isSaving || isDeleting
   const { text: statusTextColor, bg: statusBg } = STATUS_COLORS[form.status]
 
   return (
@@ -287,6 +304,19 @@ export function JobEditForm({ job }: Props) {
             onClick={() => router.push('/')}
           >
             キャンセル
+          </Button>
+        </div>
+
+        {/* 削除 */}
+        <div className="border-t pt-4" style={{ borderColor: '#E2E8F0' }}>
+          <Button
+            type="button"
+            variant="danger"
+            isLoading={isDeleting}
+            disabled={busy}
+            onClick={handleDelete}
+          >
+            この案件を削除
           </Button>
         </div>
       </form>
