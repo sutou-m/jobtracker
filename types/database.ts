@@ -21,6 +21,7 @@ export type JobPosting = {
   tags: string[]
   status: JobStatus
   user_id: string | null
+  raw_text: string | null
   created_at: string
   updated_at: string
 }

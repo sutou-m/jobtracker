@@ -94,7 +94,11 @@ export default function NewJobPage() {
     e.preventDefault()
     if (!url || !isValidUrl(url)) return
     setIsSaving(true)
-    const { error } = await supabase.from('job_postings').insert({ url, ...form })
+    const { error } = await supabase.from('job_postings').insert({
+      url,
+      ...form,
+      raw_text: pasteText.trim() || null,
+    })
     setIsSaving(false)
     if (error) {
       alert('登録に失敗しました: ' + error.message)
