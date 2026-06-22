@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import type { JobPosting } from '@/types/database'
-import { StatusBadge } from '@/components/ui/StatusBadge'
 import { SourceBadge } from '@/components/ui/SourceBadge'
+import { StatusDropdown } from '@/components/StatusDropdown'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('ja-JP', {
@@ -25,7 +25,7 @@ export function JobCard({ job }: { job: JobPosting }) {
         <h2 className="text-sm font-semibold line-clamp-2 flex-1" style={{ color: '#0F172A' }}>
           {job.title ?? 'タイトル未設定'}
         </h2>
-        <StatusBadge status={job.status} />
+        <StatusDropdown jobId={job.id} currentStatus={job.status} />
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
