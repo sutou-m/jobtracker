@@ -4,7 +4,6 @@ import { useRef, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import type { JobStatus } from '@/types/database'
-import { STATUS_LABELS } from '@/lib/constants'
 import { StatusBadge } from '@/components/ui/StatusBadge'
 
 const statuses: JobStatus[] = ['not_applied', 'applied', 'interview', 'won', 'declined']
