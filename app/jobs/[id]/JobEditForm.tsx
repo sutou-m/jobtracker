@@ -288,12 +288,13 @@ export function JobEditForm({ job }: Props) {
         </div>
 
         {/* ボタン */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Button
             type="submit"
             variant="primary"
             isLoading={isSaving}
             disabled={!urlValid || busy}
+            className="w-full sm:w-auto"
           >
             更新する
           </Button>
@@ -302,6 +303,7 @@ export function JobEditForm({ job }: Props) {
             variant="ghost"
             disabled={busy}
             onClick={() => router.push('/')}
+            className="w-full sm:w-auto"
           >
             キャンセル
           </Button>

@@ -14,4 +14,5 @@ body {
   background-color: #F8FAFC;
   color: #0F172A;
   font-family: 'Noto Sans JP', system-ui, sans-serif;
+  overflow-x: hidden;
 }

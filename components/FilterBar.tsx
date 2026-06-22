@@ -14,6 +14,7 @@ export function FilterBar() {
   const [, startTransition] = useTransition()
 
   const [q, setQ] = useState(searchParams.get('q') ?? '')
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   const isMounted = useRef(false)
   const searchParamsRef = useRef(searchParams)
 
@@ -55,6 +56,7 @@ export function FilterBar() {
 
   function resetFilters() {
     setQ('')
+    setIsFiltersOpen(false)
     startTransition(() => {
       router.push('/')
     })
@@ -63,7 +65,8 @@ export function FilterBar() {
   const activeStatus = searchParams.get('status') ?? ''
   const activeSource = searchParams.get('source') ?? ''
   const activeSort = searchParams.get('sort') ?? ''
-  const hasActiveFilters = !!(activeStatus || activeSource || q || activeSort)
+  const activeCount = [activeStatus, activeSource, q, activeSort].filter(Boolean).length
+  const hasActiveFilters = activeCount > 0
 
   return (
     <div className="flex flex-col gap-3 mb-6">
@@ -99,30 +102,57 @@ export function FilterBar() {
         </div>
       </div>
 
-      {/* ステータスフィルタ */}
-      <div className="flex flex-wrap gap-1.5">
-        <FilterChip label="すべて" active={!activeStatus} onClick={() => updateFilter('status', '')} />
-        {statusOptions.map(([value, label]) => (
-          <FilterChip
-            key={value}
-            label={label}
-            active={activeStatus === value}
-            onClick={() => updateFilter('status', activeStatus === value ? '' : value)}
-          />
-        ))}
-      </div>
+      {/* モバイル用フィルタトグルボタン */}
+      <button
+        className="sm:hidden flex items-center justify-between w-full text-xs font-medium rounded-md border px-3 py-2 transition-colors"
+        style={{
+          borderColor: '#E2E8F0',
+          backgroundColor: hasActiveFilters ? '#EFF6FF' : '#F8FAFC',
+          color: hasActiveFilters ? '#2563EB' : '#64748B',
+        }}
+        onClick={() => setIsFiltersOpen((o) => !o)}
+      >
+        <span>
+          絞り込み
+          {hasActiveFilters && (
+            <span
+              className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-[10px]"
+              style={{ backgroundColor: '#2563EB' }}
+            >
+              {activeCount}
+            </span>
+          )}
+        </span>
+        <span>{isFiltersOpen ? '▲' : '▼'}</span>
+      </button>
 
-      {/* サイト種別フィルタ */}
-      <div className="flex flex-wrap gap-1.5">
-        <FilterChip label="すべて" active={!activeSource} onClick={() => updateFilter('source', '')} />
-        {sourceOptions.map(([value, label]) => (
-          <FilterChip
-            key={value}
-            label={label}
-            active={activeSource === value}
-            onClick={() => updateFilter('source', activeSource === value ? '' : value)}
-          />
-        ))}
+      {/* フィルタチップ: モバイルでは折りたたみ、デスクトップでは常時表示 */}
+      <div className={`flex-col gap-3 ${isFiltersOpen ? 'flex' : 'hidden'} sm:flex`}>
+        {/* ステータスフィルタ */}
+        <div className="flex flex-wrap gap-1.5">
+          <FilterChip label="すべて" active={!activeStatus} onClick={() => updateFilter('status', '')} />
+          {statusOptions.map(([value, label]) => (
+            <FilterChip
+              key={value}
+              label={label}
+              active={activeStatus === value}
+              onClick={() => updateFilter('status', activeStatus === value ? '' : value)}
+            />
+          ))}
+        </div>
+
+        {/* サイト種別フィルタ */}
+        <div className="flex flex-wrap gap-1.5">
+          <FilterChip label="すべて" active={!activeSource} onClick={() => updateFilter('source', '')} />
+          {sourceOptions.map(([value, label]) => (
+            <FilterChip
+              key={value}
+              label={label}
+              active={activeSource === value}
+              onClick={() => updateFilter('source', activeSource === value ? '' : value)}
+            />
+          ))}
+        </div>
       </div>
 
       {/* アクティブフィルタバッジ + リセット */}
@@ -148,10 +178,10 @@ export function FilterBar() {
           )}
           <button
             onClick={resetFilters}
-            className="text-xs ml-1 hover:opacity-70 transition-opacity"
-            style={{ color: '#94A3B8' }}
+            className="inline-flex items-center gap-1 text-xs font-medium rounded-md border px-3 py-1 transition-colors hover:bg-[#F1F5F9]"
+            style={{ borderColor: '#E2E8F0', color: '#64748B' }}
           >
-            フィルタをリセット
+            ✕ リセット
           </button>
         </div>
       )}

@@ -170,8 +170,8 @@ export default function NewJobPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         {/* URL セクション */}
         <div className="rounded-lg border p-4 flex flex-col gap-3" style={{ borderColor: '#E2E8F0', backgroundColor: '#FFFFFF' }}>
-          <div className="flex gap-2 items-end">
-            <div className="flex-1">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+            <div className="sm:flex-1">
               <Input
                 id="url"
                 label="案件URL"
@@ -188,7 +188,7 @@ export default function NewJobPage() {
               isLoading={isFetching}
               disabled={!urlValid || busy}
               onClick={handleFetch}
-              className="shrink-0"
+              className="sm:shrink-0 w-full sm:w-auto"
             >
               情報を自動取得
             </Button>
