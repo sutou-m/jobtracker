@@ -11,6 +11,8 @@ type JobInfo = {
   tags: string[]
   summary: string | null
   raw_text: string | null
+  source?: string | null
+  url?: string | null
 }
 
 type Props = {

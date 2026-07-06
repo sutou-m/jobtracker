@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import fs from 'fs'
+import path from 'path'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -11,6 +13,65 @@ type JobInfo = {
   tags: string[]
   summary: string | null
   raw_text: string | null
+  source?: string | null
+  url?: string | null
+}
+
+function isLancersJob(jobInfo: JobInfo): boolean {
+  if (jobInfo.source === 'lancers') return true
+  if (jobInfo.url && jobInfo.url.includes('lancers.jp')) return true
+  return false
+}
+
+function getLancersProposalPrompt(): string {
+  const profile = fs.readFileSync(path.join(process.cwd(), 'LANCERS_PROFILE.md'), 'utf-8')
+
+  return `あなたはランサーズ向け提案文の作成を支援するアシスタントです。
+LANCERS_PROFILE.mdのプロフィール情報を使って、以下のフォーマットで提案文を生成してください。
+実績は案件内容に関連するものだけを2〜3件選んで記載し、実在しない実績は絶対に書かないこと。
+技術構成は案件の要件に合わせて具体的に提案すること。
+クライアント名が案件情報から分からない場合は「ご担当者様」としてください。
+
+【プロフィール情報】
+${profile}
+
+---フォーマット---
+{クライアント名}様
+
+はじめまして。FujiLABO（フジラボ）の須藤と申します。
+ご依頼内容を拝見し、ぜひお力になりたいと思いご連絡させていただきました。
+
+▲ 自己PR
+[プロフィールの自己PRをベースに、案件に関連する強みを1〜2文追加]
+
+▲ 過去の実績
+私のこれまでの実績についてご紹介いたします。
+
+【主な実績】
+[案件内容に関連する実績を2〜3件、プロフィールから選んで記載]
+
+【対応可能な業務範囲】
+[案件の要件に合わせた対応範囲を3〜5項目]
+
+【想定する技術構成】（案件内容に合わせて）
+[案件に適した技術スタックを提案]
+
+▲ 事前にご案内したいこと
+ご契約前にいくつかご確認いただきたい点がございます。
+
+【稼働時間】
+平日: 10時〜18時（応相談）
+土日: 応相談
+
+【納期目安】
+[案件の希望納期を踏まえた現実的な納期感]
+
+【修正対応】
+軽微な修正は2回まで無料で対応いたします
+
+ご期待に添えるよう全力で取り組みます。
+どうぞよろしくお願いします。
+---フォーマット終わり---`
 }
 
 const SYSTEM_PROMPTS: Record<AssistType, string> = {
@@ -73,12 +134,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '案件情報が不足しています' }, { status: 400 })
   }
 
+  const systemPrompt =
+    type === 'proposal_outline' && isLancersJob(jobInfo)
+      ? getLancersProposalPrompt()
+      : SYSTEM_PROMPTS[type]
+
   try {
     const completion = await openai.chat.completions.create(
       {
         model: 'gpt-4o',
         messages: [
-          { role: 'system', content: SYSTEM_PROMPTS[type] },
+          { role: 'system', content: systemPrompt },
           { role: 'user', content: `案件情報:\n${formattedJobInfo}` },
         ],
       },

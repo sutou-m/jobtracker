@@ -30,6 +30,8 @@ export default async function JobDetailPage({ params }: Props) {
           tags: job.tags,
           summary: job.summary,
           raw_text: job.raw_text,
+          source: job.source,
+          url: job.url,
         }}
       />
     </div>
